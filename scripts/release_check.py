@@ -25,8 +25,11 @@ PRIVATE_HOST_PATTERNS = [
     re.compile(r"dev\.awkh\.site", re.I),
 ]
 FORBIDDEN_PATH_PARTS = {
-    ".env", ".pem", ".key", ".p12", ".pfx", ".db", ".sqlite",
     "private", "platform", "customer-data", "runtime-state",
+}
+FORBIDDEN_SUFFIXES = {
+    ".pem", ".key", ".p12", ".pfx", ".db", ".sqlite", ".sqlite3",
+    ".exe", ".dll", ".so", ".zip", ".gz", ".zst",
 }
 
 
@@ -100,8 +103,11 @@ def main() -> None:
         if lowered_parts & FORBIDDEN_PATH_PARTS:
             findings.append(f"forbidden path: {relative}")
             continue
-        if path.suffix.lower() in {".exe", ".dll", ".so", ".zip", ".gz", ".zst", ".sqlite3"}:
-            findings.append(f"binary/package file not allowed in public experience repo: {relative}")
+        if any(part == ".env" or (part.startswith(".env.") and part != ".env.example") for part in lowered_parts):
+            findings.append(f"environment file not allowed in public experience repo: {relative}")
+            continue
+        if path.suffix.lower() in FORBIDDEN_SUFFIXES:
+            findings.append(f"private key, database, binary, or package file not allowed: {relative}")
             continue
         full_path = ROOT / path
         try:
