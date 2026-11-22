@@ -1,0 +1,116 @@
+name: AWKH public release gate
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Public experience version from VERSION (for example 0.1.0-preview)"
+        required: true
+        type: string
+        default: "0.1.0-preview"
+      prerelease:
+        description: "Mark the GitHub Release as a pre-release"
+        required: true
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: awkh-public-release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    name: Validate public release contents
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Check out source
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - name: Validate version, links, release notes, and public boundary
+        env:
+          RELEASE_VERSION: ${{ inputs.version || '' }}
+        run: python3 scripts/release_check.py --version "$RELEASE_VERSION"
+
+  publish:
+    name: Create tag and GitHub Release
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
+    needs: validate
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Check out validated commit
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - name: Create or update the version tag and GitHub Release
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea
+        env:
+          RELEASE_VERSION: ${{ inputs.version }}
+          PRERELEASE: ${{ inputs.prerelease }}
+        with:
+          script: |
+            const fs = require('fs');
+            const version = process.env.RELEASE_VERSION || '';
+            const prerelease = process.env.PRERELEASE === 'true';
+            if (!/^\\d+\\.\\d+\\.\\d+(?:-[0-9A-Za-z.-]+)?$/.test(version)) {
+              throw new Error('Invalid semantic version: ' + version);
+            }
+            const declared = fs.readFileSync('VERSION', 'utf8').trim();
+            if (version !== declared) {
+              throw new Error(`Requested version ${version} does not match VERSION (${declared}).`);
+            }
+            const notesPath = `releases/v${version}.md`;
+            if (!fs.existsSync(notesPath)) {
+              throw new Error(`Missing release notes: ${notesPath}`);
+            }
+            if (context.ref !== 'refs/heads/main') {
+              throw new Error('Releases must be dispatched from main.');
+            }
+
+            const { owner, repo } = context.repo;
+            const tagName = `v${version}`;
+            let tag;
+            try {
+              const existing = await github.rest.git.getRef({
+                owner, repo, ref: `tags/${tagName}`
+              });
+              tag = existing.data;
+            } catch (error) {
+              if (error.status !== 404) throw error;
+              const created = await github.rest.git.createRef({
+                owner, repo, ref: `refs/tags/${tagName}`, sha: context.sha
+              });
+              tag = created.data;
+            }
+            if (tag.object.sha !== context.sha) {
+              throw new Error(`Tag ${tagName} already points to ${tag.object.sha}, not this validated commit ${context.sha}.`);
+            }
+
+            const body = fs.readFileSync(notesPath, 'utf8');
+            let release;
+            try {
+              const existing = await github.rest.repos.getReleaseByTag({ owner, repo, tag: tagName });
+              const updated = await github.rest.repos.updateRelease({
+                owner, repo, release_id: existing.data.id,
+                name: `AWKH Public Experience ${version}`,
+                body, draft: false, prerelease
+              });
+              release = updated.data;
+            } catch (error) {
+              if (error.status !== 404) throw error;
+              const created = await github.rest.repos.createRelease({
+                owner, repo, tag_name: tagName, target_commitish: context.sha,
+                name: `AWKH Public Experience ${version}`,
+                body, draft: false, prerelease
+              });
+              release = created.data;
+            }
+            core.notice(`Published ${release.html_url}`);
+            core.setOutput('release_url', release.html_url);
