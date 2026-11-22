@@ -2,34 +2,44 @@
 
 **AI-agent-powered device management and automation through MCP.**
 
-AWKH connects an AI assistant to authorized devices and provides a structured way to inspect capabilities, plan actions, execute tasks, and verify results.
+AWKH connects an AI assistant to devices you own or are explicitly authorized to manage. It provides a structured way to inspect capabilities, plan actions, execute tasks, and verify results.
 
-Website: https://agent.awkh.art/
+- Website: <https://agent.awkh.art/>
+- **Official public MCP endpoint:** <https://mcp.awkh.art/connect/mcp>
+- Authentication: OAuth
 
 ## What it does
 
-- **Device management** — manage enrolled Windows and Linux devices.
-- **MCP integration** — expose device capabilities and operations to compatible AI clients.
-- **Multiple execution modes** — command-line, background automation, and interactive GUI workflows.
-- **Task verification** — track execution status and confirm results instead of treating command dispatch as success.
-- **Private deployment** — run an isolated instance for an individual or organization.
-
-## Project status
-
-AWKH is under active development. Public website and documentation are provided here; this repository does not contain the proprietary platform source code.
-
-The hosted website is a testing/evaluation service. Do not treat it as a production security guarantee or connect devices containing sensitive workloads without independently reviewing the risks.
+- **Device management** — inspect and manage enrolled Windows and Linux devices within your authorized scope.
+- **MCP integration** — connect compatible AI clients to AWKH device capabilities.
+- **Multiple execution modes** — command-line, background automation, and interactive GUI workflows, depending on Agent capabilities.
+- **Task verification** — track execution status and verify outcomes instead of treating command dispatch as success.
+- **Private deployment** — run a separate, self-hosted instance for your own devices.
 
 ## Getting started
 
-1. Read the project overview and deployment information at https://agent.awkh.art/
-2. Confirm that you control the target device and have authorization to manage it.
-3. Use only the installation and connection instructions currently published by the project.
-4. Keep the Agent updated and verify each task's reported result.
+1. Open ChatGPT or another compatible MCP client.
+2. Add a custom MCP server using `https://mcp.awkh.art/connect/mcp`.
+3. Select OAuth and complete authorization on the AWKH domain.
+4. Ask AWKH for the device onboarding instructions for your operating system.
+5. Install the Agent only on a device you own or are authorized to manage, then verify its registration and online status.
+
+See the [quick-start guide](docs/quick-start.md), [feature overview](docs/experience.md), and [security notes](docs/privacy-and-safety.md).
+
+## Official shared service and private deployment
+
+The public endpoint above connects to the AWKH-operated shared experience service. A customer's private deployment is a separate product line: it runs its own Core, MCP service, database, credentials, and device scope on infrastructure controlled by that customer. Private deployment source and packages are not published in this repository.
+
+## Project status
+
+AWKH is under active development. The hosted public service is provided for testing and evaluation. Do not treat it as a production security guarantee or connect devices containing sensitive workloads without independently reviewing the risks.
 
 ## Security
 
-Do not publish credentials, access tokens, private keys, customer data, or device enrollment invitations in issues or discussions. Report suspected vulnerabilities privately through the project's website contact channel.
+- Only connect devices you own or have explicit permission to administer.
+- MCP client authorization and Agent device enrollment are separate steps. A successful OAuth connection does not mean a device is enrolled or online.
+- Do not publish access tokens, refresh tokens, device invitations, passwords, private keys, certificates, or customer data in issues or discussions.
+- Report suspected vulnerabilities privately through the project's website contact channel.
 
 ## Source and licensing
 
