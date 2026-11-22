@@ -7,6 +7,7 @@ AWKH connects an AI assistant to devices you own or are explicitly authorized to
 - Website: <https://agent.awkh.art/>
 - **Official public MCP endpoint:** <https://mcp.awkh.art/connect/mcp>
 - Authentication: OAuth
+- Current public experience version: [`0.1.0-preview`](releases/v0.1.0-preview.md)
 
 ## What it does
 
@@ -25,6 +26,14 @@ AWKH connects an AI assistant to devices you own or are explicitly authorized to
 5. Install the Agent only on a device you own or are authorized to manage, then verify its registration and online status.
 
 See the [quick-start guide](docs/quick-start.md), [feature overview](docs/experience.md), and [security notes](docs/privacy-and-safety.md).
+
+## Releases and updates
+
+- [Latest public experience release](RELEASES.md)
+- [Changelog](CHANGELOG.md)
+- [Release policy](docs/release-policy.md)
+
+The public experience version is independent of the internal AWKH Core, MCP, and Agent component versions. A documentation/experience release does not imply that downloadable binaries or proprietary server source are published.
 
 ## Official shared service and private deployment
 
