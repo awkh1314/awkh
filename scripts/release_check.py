@@ -4,24 +4,25 @@
 from __future__ import annotations
 
 import argparse
+import os
 import re
 import subprocess
 import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-VERSION_RE = re.compile(r"^\\d+\\.\\d+\\.\\d+(?:-[0-9A-Za-z.-]+)?$")
+VERSION_RE = re.compile(r"^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$")
 SECRET_PATTERNS = {
     "private_key": re.compile(r"-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----"),
-    "github_token": re.compile(r"\\b(?:ghp_|gho_|ghu_|ghs_|ghr_|github_pat_)[A-Za-z0-9_]{20,}\\b"),
-    "aws_access_key": re.compile(r"\\bAKIA[0-9A-Z]{16}\\b"),
-    "slack_token": re.compile(r"\\bxox[baprs]-[A-Za-z0-9-]{20,}\\b"),
-    "url_credentials": re.compile(r"https?://[^/\\s:@]+:[^/\\s@]+@"),
+    "github_token": re.compile(r"\b(?:ghp_|gho_|ghu_|ghs_|ghr_|github_pat_)[A-Za-z0-9_]{20,}\b"),
+    "aws_access_key": re.compile(r"\bAKIA[0-9A-Z]{16}\b"),
+    "slack_token": re.compile(r"\bxox[baprs]-[A-Za-z0-9-]{20,}\b"),
+    "url_credentials": re.compile(r"https?://[^/\s:@]+:[^/\s@]+@"),
 }
 PRIVATE_HOST_PATTERNS = [
-    re.compile(r"agent\\.qa\\.awkh\\.site", re.I),
-    re.compile(r"agent\\.awkh\\.site", re.I),
-    re.compile(r"dev\\.awkh\\.site", re.I),
+    re.compile(r"agent\.qa\.awkh\.site", re.I),
+    re.compile(r"agent\.awkh\.site", re.I),
+    re.compile(r"dev\.awkh\.site", re.I),
 ]
 FORBIDDEN_PATH_PARTS = {
     ".env", ".pem", ".key", ".p12", ".pfx", ".db", ".sqlite",
@@ -39,7 +40,7 @@ def git_files() -> list[str]:
         ["git", "ls-files", "-z"], cwd=ROOT, check=True,
         stdout=subprocess.PIPE,
     )
-    return [p for p in result.stdout.decode().split("\\0") if p]
+    return [p for p in result.stdout.decode().split("\0") if p]
 
 
 def main() -> None:
@@ -56,8 +57,8 @@ def main() -> None:
     if args.version and args.version != version:
         fail(f"Requested version {args.version!r} does not match VERSION {version!r}.")
 
-    if __import__("os").environ.get("GITHUB_EVENT_NAME") == "workflow_dispatch":
-        if __import__("os").environ.get("GITHUB_REF") != "refs/heads/main":
+    if os.environ.get("GITHUB_EVENT_NAME") == "workflow_dispatch":
+        if os.environ.get("GITHUB_REF") != "refs/heads/main":
             fail("Release workflow must be dispatched from main.")
 
     required = [
@@ -105,7 +106,7 @@ def main() -> None:
         full_path = ROOT / path
         try:
             raw = full_path.read_bytes()
-            if b"\\0" in raw or len(raw) > 2_000_000:
+            if b"\0" in raw or len(raw) > 2_000_000:
                 continue
             content = raw.decode("utf-8")
         except (OSError, UnicodeDecodeError):
@@ -119,14 +120,14 @@ def main() -> None:
                 findings.append(f"private QA hostname in {relative}")
 
     if findings:
-        fail("Public-boundary/security scan failed:\\n- " + "\\n- ".join(findings))
+        fail("Public-boundary/security scan failed:\n- " + "\n- ".join(findings))
 
     diff_check = subprocess.run(
         ["git", "diff", "--check"], cwd=ROOT, text=True,
         stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
     )
     if diff_check.returncode:
-        fail("git diff --check failed:\\n" + diff_check.stdout)
+        fail("git diff --check failed:\n" + diff_check.stdout)
 
     print(f"PASS: public experience {version}")
     print(f"PASS: {len(required)} required release files present")
